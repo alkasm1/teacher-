@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل دخول الطلاب</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* تنسيقات خاصة بصفحة الدخول */
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .login-container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 700px;
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 25px;
+        }
+        .image-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+            justify-content: center;
+        }
+        .image-card {
+            border: 2px solid transparent;
+            border-radius: 8px;
+            padding: 5px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+        .image-card.selected {
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.3);
+            background-color: #e7f2ff;
+        }
+        .image-card img {
+            width: 100%;
+            height: auto;
+            border-radius: 5px;
+            display: block;
+        }
+        .image-card span {
+            display: block;
+            margin-top: 5px;
+            font-size: 0.8em;
+            color: #555;
+        }
+        .password-input-group {
+            margin-bottom: 25px;
+        }
+        .password-input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #444;
+            font-weight: bold;
+        }
+        .password-input-group input[type="password"] {
+            width: calc(100% - 40px);
+            padding: 12px 18px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 1.1em;
+        }
+        button {
+            padding: 12px 25px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        #message {
+            color: red;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        .student-page-content {
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #fefefe;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container" id="login-section">
+        <h1>مرحبا بك! الرجاء اختيار صورتك وإدخال كلمة المرور</h1>
+        
+        <div class="image-gallery" id="image-gallery">
+            <!-- سيتم تحميل الصور هنا ديناميكياً -->
+        </div>
+        
+        <div class="password-input-group">
+            <label for="password">كلمة المرور:</label>
+            <input type="password" id="password" placeholder="أدخل كلمة المرور الخاصة بك">
+        </div>
+        
+        <button id="loginButton">تسجيل الدخول</button>
+        
+        <p id="message"></p>
+    </div>
+
+    <!-- هذا الجزء سيظهر بعد تسجيل الدخول بنجاح -->
+    <div class="student-page-content" id="student-content" style="display:none;">
+        <h2 id="welcome-message"></h2>
+        <div id="specific-student-info">
+            <!-- محتوى الطالب الخاص سيتم تحميله هنا -->
+            <p>هذه هي صفحتك الخاصة. يمكنك إضافة أي محتوى هنا.</p>
+            <p>اسمك: <span id="student-name-display"></span></p>
+            <p>صورة هويتك: <span id="student-image-id-display"></span></p>
+        </div>
+        <button id="logoutButton" style="background-color: #6c757d;">تسجيل الخروج</button>
+    </div>
+
+    <script src="utility.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const imageGallery = document.getElementById('image-gallery');
+            const passwordInput = document.getElementById('password');
+            const loginButton = document.getElementById('loginButton');
+            const messageDisplay = document.getElementById('message');
+            const loginSection = document.getElementById('login-section');
+            const studentContentSection = document.getElementById('student-content');
+            const welcomeMessage = document.getElementById('welcome-message');
+            const studentNameDisplay = document.getElementById('student-name-display');
+            const studentImageIdDisplay = document.getElementById('student-image-id-display');
+            const logoutButton = document.getElementById('logoutButton');
+
+            let selectedImageId = null;
+
+            // 1. عرض الصور في المعرض
+            const totalImages = 20; // العدد الكلي لصور الطلاب
+            for (let i = 1; i <= totalImages; i++) {
+                const imgId = `img${String(i).padStart(3, '0')}`; // مثال: img001, img002
+                const imgPath = `images/${imgId}.png`; // تأكد من مسار الصور لديك
+
+                const imgCard = document.createElement('div');
+                imgCard.classList.add('image-card');
+                imgCard.dataset.imageId = imgId; // حفظ معرف الصورة
+                
+                const imgElement = document.createElement('img');
+                imgElement.src = imgPath;
+                imgElement.alt = `صورة الطالب ${i}`;
+
+                const imgLabel = document.createElement('span');
+                imgLabel.textContent = `طالب ${i}`; // يمكنك تغيير هذا ليعرض مثلاً ID الصورة الحقيقي
+
+                imgCard.appendChild(imgElement);
+                imgCard.appendChild(imgLabel);
+                imageGallery.appendChild(imgCard);
+
+                imgCard.addEventListener('click', () => {
+                    // إزالة التحديد من جميع الصور أولاً
+                    document.querySelectorAll('.image-card').forEach(card => {
+                        card.classList.remove('selected');
+                    });
+                    // تحديد الصورة المحددة
+                    imgCard.classList.add('selected');
+                    selectedImageId = imgId;
+                });
+            }
+
+            // 2. معالجة زر تسجيل الدخول
+            loginButton.addEventListener('click', async () => {
+                const password = passwordInput.value;
+
+                if (!selectedImageId) {
+                    messageDisplay.textContent = 'الرجاء اختيار صورتك.';
+                    return;
+                }
+                if (!password) {
+                    messageDisplay.textContent = 'الرجاء إدخال كلمة المرور.';
+                    return;
+                }
+
+                // توليد الهاش للمحاولة الحالية
+                const currentAttemptHash = await generateHash(selectedImageId, password);
+
+                // جلب جميع بيانات الطلاب المخزنة
+                const allStoredStudents = getAllStudentData();
+
+                // التحقق مما إذا كان الهاش الحالي يطابق أحد الهاشات المخزنة
+                const matchedStudentInfo = allStoredStudents[currentAttemptHash];
+
+                if (matchedStudentInfo) {
+                    messageDisplay.textContent = `أهلاً بك يا ${matchedStudentInfo.name}!`;
+                    messageDisplay.style.color = 'green';
+                    
+                    // إخفاء قسم تسجيل الدخول
+                    loginSection.style.display = 'none';
+                    // عرض قسم محتوى الطالب
+                    studentContentSection.style.display = 'block';
+
+                    // تحديث محتوى صفحة الطالب
+                    welcomeMessage.textContent = `مرحبا بك يا ${matchedStudentInfo.name}!`;
+                    studentNameDisplay.textContent = matchedStudentInfo.name;
+                    studentImageIdDisplay.textContent = matchedStudentInfo.image_id;
+
+                    // يمكنك هنا تحميل محتوى صفحة الطالب الفعلية
+                    // مثلاً باستخدام AJAX لتحميل الـ HTML من matchedStudentInfo.page
+                    // أو ببساطة عرض div معين يخص هذا الطالب.
+                    // للمثال، سنعرض فقط المعلومات التي تم تخزينها.
+                    
+                } else {
+                    messageDisplay.textContent = 'معرف الصورة أو كلمة المرور خاطئة.';
+                    messageDisplay.style.color = 'red';
+                }
+            });
+
+            // زر تسجيل الخروج
+            logoutButton.addEventListener('click', () => {
+                studentContentSection.style.display = 'none';
+                loginSection.style.display = 'block';
+                passwordInput.value = ''; // مسح كلمة المرور
+                // إلغاء تحديد الصورة
+                document.querySelectorAll('.image-card').forEach(card => {
+                    card.classList.remove('selected');
+                });
+                selectedImageId = null;
+                messageDisplay.textContent = ''; // مسح رسالة الحالة
+            });
+        });
+    </script>
+</body>
+</html>
