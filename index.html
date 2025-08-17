@@ -8,7 +8,7 @@
     <style>
         /* تنسيقات خاصة بصفحة الدخول */
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -25,6 +25,7 @@
             width: 100%;
             max-width: 700px;
             text-align: center;
+            position: relative; /* لإحتواء زر الإدارة */
         }
         h1 {
             color: #333;
@@ -43,13 +44,18 @@
             padding: 5px;
             cursor: pointer;
             transition: all 0.2s ease-in-out;
+            /* لضمان احتواء الكانفاس بشكل صحيح */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
         .image-card.selected {
             border-color: #007bff;
             box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.3);
             background-color: #e7f2ff;
         }
-        .image-card img {
+        .image-card canvas { /* تنسيق الكانفاس */
             width: 100%;
             height: auto;
             border-radius: 5px;
@@ -101,6 +107,30 @@
             border-radius: 8px;
             background-color: #fefefe;
             text-align: right;
+            width: 100%;
+            max-width: 700px;
+            display: none; /* إخفائها افتراضياً */
+        }
+
+        /* زر الدخول لصفحة الإدارة */
+        .admin-link {
+            position: absolute;
+            top: 10px;
+            left: 10px; /* أو right: 10px; إذا كنت تفضل في الجهة اليسرى */
+            font-size: 0.8em;
+        }
+        .admin-link a {
+            color: #6c757d;
+            text-decoration: none;
+            padding: 5px 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+            transition: background-color 0.2s;
+        }
+        .admin-link a:hover {
+            background-color: #e2e6ea;
+            color: #495057;
         }
     </style>
 </head>
@@ -109,7 +139,7 @@
         <h1>مرحبا بك! الرجاء اختيار صورتك وإدخال كلمة المرور</h1>
         
         <div class="image-gallery" id="image-gallery">
-            <!-- سيتم تحميل الصور هنا ديناميكياً -->
+            <!-- سيتم تحميل الأشكال الهندسية هنا ديناميكياً -->
         </div>
         
         <div class="password-input-group">
@@ -120,10 +150,15 @@
         <button id="loginButton">تسجيل الدخول</button>
         
         <p id="message"></p>
+
+        <!-- زر الدخول لصفحة الإدارة -->
+        <div class="admin-link">
+            <a href="admin_setup.html">الدخول لصفحة الإعدادات</a>
+        </div>
     </div>
 
     <!-- هذا الجزء سيظهر بعد تسجيل الدخول بنجاح -->
-    <div class="student-page-content" id="student-content" style="display:none;">
+    <div class="student-page-content" id="student-content">
         <h2 id="welcome-message"></h2>
         <div id="specific-student-info">
             <!-- محتوى الطالب الخاص سيتم تحميله هنا -->
@@ -150,24 +185,87 @@
 
             let selectedImageId = null;
 
-            // 1. عرض الصور في المعرض
-            const totalImages = 20; // العدد الكلي لصور الطلاب
+            const totalImages = 20;
+            const canvasSize = 100; // حجم الكانفاس (العرض والارتفاع)
+
+            // دالة لتوليد لون عشوائي
+            function getRandomColor() {
+                const letters = '0123456789ABCDEF';
+                let color = '#';
+                for (let i = 0; i < 6; i++) {
+                    color += letters[Math.floor(Math.random() * 16)];
+                }
+                return color;
+            }
+
+            // دالة لرسم شكل هندسي عشوائي على الكانفاس
+            function drawRandomShape(ctx, size, seed) {
+                const centerX = size / 2;
+                const centerY = size / 2;
+
+                // استخدام الـ seed لضمان تكرار نفس الشكل واللون لنفس الـ ID
+                // ببساطة، سنقوم بإنشاء "مولد أرقام شبه عشوائية" خاص بنا
+                // https://stackoverflow.com/questions/521295/seeding-the-random-number-generator-in-javascript
+                function mulberry32(a) {
+                    return function() {
+                        let t = a += 0x6D2B79F5;
+                        t = Math.imul(t ^ t >>> 15, t | 1);
+                        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+                        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+                    }
+                }
+                const random = mulberry32(seed); // استخدام الـ seed كـ "بذرة"
+
+                ctx.clearRect(0, 0, size, size); // مسح الكانفاس
+                ctx.fillStyle = "#eee"; // لون خلفية خفيف
+                ctx.fillRect(0, 0, size, size);
+
+                const shapeType = Math.floor(random() * 3); // 0: دائرة, 1: مربع, 2: مثلث
+                const shapeColor = getRandomColor(); // يمكن استخدام random() هنا أيضاً
+                const shapeSize = size * (0.3 + random() * 0.3); // حجم عشوائي بين 30% و 60% من حجم الكانفاس
+
+                ctx.fillStyle = shapeColor;
+                ctx.beginPath();
+
+                if (shapeType === 0) { // دائرة
+                    ctx.arc(centerX, centerY, shapeSize / 2, 0, Math.PI * 2);
+                } else if (shapeType === 1) { // مربع
+                    ctx.rect(centerX - shapeSize / 2, centerY - shapeSize / 2, shapeSize, shapeSize);
+                } else { // مثلث
+                    ctx.moveTo(centerX, centerY - shapeSize / 2);
+                    ctx.lineTo(centerX + shapeSize / 2, centerY + shapeSize / 2);
+                    ctx.lineTo(centerX - shapeSize / 2, centerY + shapeSize / 2);
+                    ctx.closePath();
+                }
+                ctx.fill();
+
+                // إضافة نص ID على الصورة
+                ctx.fillStyle = 'rgba(0,0,0,0.5)'; // لون نص رمادي شبه شفاف
+                ctx.font = 'bold 12px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(seed.toString(), centerX, centerY + shapeSize / 2 + 10); // ID الطالب
+            }
+
+            // 1. توليد الأشكال الهندسية وعرضها في المعرض
             for (let i = 1; i <= totalImages; i++) {
                 const imgId = `img${String(i).padStart(3, '0')}`; // مثال: img001, img002
-                const imgPath = `images/${imgId}.png`; // تأكد من مسار الصور لديك
+                const seed = i; // استخدام رقم الطالب كـ "بذرة" لضمان شكل ولون ثابتين لنفس الطالب
 
                 const imgCard = document.createElement('div');
                 imgCard.classList.add('image-card');
                 imgCard.dataset.imageId = imgId; // حفظ معرف الصورة
                 
-                const imgElement = document.createElement('img');
-                imgElement.src = imgPath;
-                imgElement.alt = `صورة الطالب ${i}`;
+                const canvas = document.createElement('canvas');
+                canvas.width = canvasSize;
+                canvas.height = canvasSize;
+                const ctx = canvas.getContext('2d');
+                drawRandomShape(ctx, canvasSize, seed); // رسم الشكل على الكانفاس
 
                 const imgLabel = document.createElement('span');
-                imgLabel.textContent = `طالب ${i}`; // يمكنك تغيير هذا ليعرض مثلاً ID الصورة الحقيقي
+                imgLabel.textContent = `${imgId}`; // عرض معرف الصورة
 
-                imgCard.appendChild(imgElement);
+                imgCard.appendChild(canvas); // إضافة الكانفاس بدلاً من الـ <img>
                 imgCard.appendChild(imgLabel);
                 imageGallery.appendChild(imgCard);
 
@@ -182,7 +280,7 @@
                 });
             }
 
-            // 2. معالجة زر تسجيل الدخول
+            // 2. معالجة زر تسجيل الدخول (لا تغيير هنا)
             loginButton.addEventListener('click', async () => {
                 const password = passwordInput.value;
 
@@ -195,33 +293,20 @@
                     return;
                 }
 
-                // توليد الهاش للمحاولة الحالية
                 const currentAttemptHash = await generateHash(selectedImageId, password);
-
-                // جلب جميع بيانات الطلاب المخزنة
                 const allStoredStudents = getAllStudentData();
-
-                // التحقق مما إذا كان الهاش الحالي يطابق أحد الهاشات المخزنة
                 const matchedStudentInfo = allStoredStudents[currentAttemptHash];
 
                 if (matchedStudentInfo) {
                     messageDisplay.textContent = `أهلاً بك يا ${matchedStudentInfo.name}!`;
                     messageDisplay.style.color = 'green';
                     
-                    // إخفاء قسم تسجيل الدخول
                     loginSection.style.display = 'none';
-                    // عرض قسم محتوى الطالب
                     studentContentSection.style.display = 'block';
 
-                    // تحديث محتوى صفحة الطالب
                     welcomeMessage.textContent = `مرحبا بك يا ${matchedStudentInfo.name}!`;
                     studentNameDisplay.textContent = matchedStudentInfo.name;
                     studentImageIdDisplay.textContent = matchedStudentInfo.image_id;
-
-                    // يمكنك هنا تحميل محتوى صفحة الطالب الفعلية
-                    // مثلاً باستخدام AJAX لتحميل الـ HTML من matchedStudentInfo.page
-                    // أو ببساطة عرض div معين يخص هذا الطالب.
-                    // للمثال، سنعرض فقط المعلومات التي تم تخزينها.
                     
                 } else {
                     messageDisplay.textContent = 'معرف الصورة أو كلمة المرور خاطئة.';
@@ -229,17 +314,16 @@
                 }
             });
 
-            // زر تسجيل الخروج
+            // زر تسجيل الخروج (لا تغيير هنا)
             logoutButton.addEventListener('click', () => {
                 studentContentSection.style.display = 'none';
                 loginSection.style.display = 'block';
-                passwordInput.value = ''; // مسح كلمة المرور
-                // إلغاء تحديد الصورة
+                passwordInput.value = '';
                 document.querySelectorAll('.image-card').forEach(card => {
                     card.classList.remove('selected');
                 });
                 selectedImageId = null;
-                messageDisplay.textContent = ''; // مسح رسالة الحالة
+                messageDisplay.textContent = '';
             });
         });
     </script>
