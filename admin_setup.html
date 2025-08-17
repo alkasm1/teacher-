@@ -65,13 +65,9 @@
                 <label for="studentNameInput">اسم الطالب:</label>
                 <input type="text" id="studentNameInput" placeholder="مثال: أحمد محمد">
 
-                <label for="imageSelect">اختر صورة الطالب (معرف الصورة):</label>
+                <label for="imageSelect">اختر معرف الشكل الهندسي للطالب:</label>
                 <select id="imageSelect">
-                    <!-- ستقوم بتوليد هذه الخيارات ديناميكياً من قائمة الصور المتوفرة لديك -->
-                    <option value="img001">صورة الطالب 1 (img001.png)</option>
-                    <option value="img002">صورة الطالب 2 (img002.png)</option>
-                    <!-- ... حتى 20 صورة أو أكثر ... -->
-                    <option value="img020">صورة الطالب 20 (img020.png)</option>
+                    <!-- سيتم توليد هذه الخيارات ديناميكياً -->
                 </select>
 
                 <label for="passwordInput">كلمة المرور للطالب:</label>
@@ -110,7 +106,7 @@
             // وظيفة لعرض الطلاب المسجلين
             function renderStudents() {
                 const allStudents = getAllStudentData();
-                studentListContainer.innerHTML = ''; // مسح القائمة الحالية
+                studentListContainer.innerHTML = '';
                 const studentKeys = Object.keys(allStudents);
 
                 if (studentKeys.length === 0) {
@@ -121,7 +117,7 @@
                         const div = document.createElement('div');
                         div.innerHTML = `
                             <strong>الاسم:</strong> ${studentInfo.name || 'غير محدد'}<br>
-                            <strong>الصورة (ID):</strong> ${studentInfo.image_id || 'غير محدد'}<br>
+                            <strong>معرف الشكل (ID):</strong> ${studentInfo.image_id || 'غير محدد'}<br>
                             <strong>مسار الصفحة:</strong> ${studentInfo.page || 'غير محدد'}<br>
                             <strong>المفتاح (Hash):</strong> <small>${key}</small>
                         `;
@@ -130,12 +126,13 @@
                 }
             }
 
-            // إضافة خيارات الصور تلقائيًا (يمكنك تعديل هذا الجزء ليناسب صورك الفعلية)
-            for (let i = 1; i <= 20; i++) {
+            // إضافة خيارات الأشكال تلقائيًا
+            const totalShapes = 20; // يجب أن يتطابق مع العدد في index.html
+            for (let i = 1; i <= totalShapes; i++) {
                 const imgId = `img${String(i).padStart(3, '0')}`;
                 const option = document.createElement('option');
                 option.value = imgId;
-                option.textContent = `صورة الطالب ${i} (${imgId}.png)`;
+                option.textContent = `معرف الشكل ${i} (${imgId})`;
                 imageSelect.appendChild(option);
             }
 
@@ -153,7 +150,6 @@
 
                 const studentKey = await generateHash(imageId, password);
                 
-                // حفظ بيانات الطالب
                 saveStudentData(studentKey, {
                     name: studentName,
                     image_id: imageId,
@@ -163,12 +159,11 @@
                 statusMessage.textContent = `تم إضافة الطالب ${studentName} بنجاح.`;
                 statusMessage.style.color = 'green';
                 
-                // مسح الحقول بعد الإضافة
                 studentNameInput.value = '';
                 passwordInput.value = '';
                 studentPageInput.value = '';
 
-                renderStudents(); // تحديث قائمة الطلاب المعروضة
+                renderStudents();
             });
 
             clearAllStudentsBtn.addEventListener('click', () => {
@@ -180,7 +175,6 @@
                 }
             });
 
-            // عرض الطلاب عند تحميل الصفحة لأول مرة
             renderStudents();
         });
     </script>
